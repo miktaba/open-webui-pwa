@@ -1,0 +1,19 @@
+services:
+  pwa-client:
+    build: .
+    container_name: open-webui-pwa
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./public:/app/public
+      - ./.env:/app/.env
+    environment:
+      - NODE_ENV=production
+      - PWA_PORT=3001
+      - OPENWEBUI_URL=${OPENWEBUI_URL}
+    networks:
+      - openwebui-network
+
+networks:
+  openwebui-network:
+    external: true 

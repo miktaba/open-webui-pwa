@@ -109,6 +109,23 @@ class OpenWebUI {
             const resetButton = document.getElementById('reset-chat');
             resetButton.addEventListener('click', () => this.resetChat());
 
+            // Logout functionality
+            const logoutButton = document.getElementById('logout');
+            logoutButton.addEventListener('click', () => {
+                // Clear API key
+                localStorage.removeItem('apiKey');
+                
+                // Clear chat history
+                this.clearMessages();
+                
+                // Show API key form and hide chat interface
+                document.querySelector('.api-key-container').style.display = 'flex';
+                document.querySelector('.chat-interface').style.display = 'none';
+                
+                // Show success message
+                this.showAlert('Logged out successfully', 'success');
+            });
+
             // Получаем список моделей и ждем результат
             const response = await this.api.getModels();
             console.log('API Response:', response);
@@ -223,12 +240,14 @@ class OpenWebUI {
     }
 
     resetChat() {
-        if (confirm('Are you sure you want to reset the chat? This will clear all messages.')) {
-            const messagesContainer = document.querySelector('.messages-container');
-            messagesContainer.innerHTML = '';
-            this.messages = [];
-            this.showAlert('Chat has been reset', 'success');
-        }
+        this.clearMessages();
+        this.showAlert('Chat has been reset', 'success');
+    }
+
+    clearMessages() {
+        const messagesContainer = document.querySelector('.messages-container');
+        messagesContainer.innerHTML = '';
+        this.messages = [];
     }
 
     initScrollHandlers() {

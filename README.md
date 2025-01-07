@@ -2,6 +2,12 @@
 
 Simple mobile chat interface for Open WebUI. Chat with AI models from your phone!
 
+<p float="left">
+  <img src="https://github.com/user-attachments/assets/af51a65c-de6a-4be1-909e-6947074efb4f" width=180" />
+  <img src="https://github.com/user-attachments/assets/6a7f843b-28f9-470f-ae25-c936a4f921bf" width="180" /> 
+  <img src="https://github.com/user-attachments/assets/6d67f710-44d3-4d21-a6b2-c93f963cfe43" width="180" />
+</p>
+
 ## What You Need
 - Computer with Docker installed
 - Phone

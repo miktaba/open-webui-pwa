@@ -7,6 +7,37 @@ class OpenWebUI {
         this.initScrollHandlers();
     }
 
+    getMessagesStorageKey() {
+        const apiKey = this.api.getApiKey();
+        return apiKey ? `${CONFIG.STORAGE.MESSAGES}_${apiKey}` : null;
+    }
+
+    loadMessages() {
+        const storageKey = this.getMessagesStorageKey();
+        if (!storageKey) return;
+
+        const savedMessages = localStorage.getItem(storageKey);
+        if (savedMessages) {
+            this.messages = JSON.parse(savedMessages);
+            // Restore messages to UI
+            const messagesContainer = document.querySelector('.messages-container');
+            messagesContainer.innerHTML = '';
+            this.messages.forEach(msg => {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message', msg.role);
+                messageElement.textContent = msg.content;
+                messagesContainer.insertBefore(messageElement, messagesContainer.firstChild);
+            });
+        }
+    }
+
+    saveMessages() {
+        const storageKey = this.getMessagesStorageKey();
+        if (!storageKey) return;
+        
+        localStorage.setItem(storageKey, JSON.stringify(this.messages));
+    }
+
     initKeyboardHandlers() {
         // Обработка появления клавиатуры
         window.visualViewport.addEventListener('resize', () => {
@@ -108,6 +139,9 @@ class OpenWebUI {
             this.apiKeyContainer.style.display = 'none';
             this.chatInterface.style.display = 'block';
 
+            // Load messages for this API key
+            this.loadMessages();
+
             // Инициализируем кнопку сброса
             const resetButton = document.getElementById('reset-chat');
             resetButton.addEventListener('click', () => this.resetChat());
@@ -115,11 +149,11 @@ class OpenWebUI {
             // Logout functionality
             const logoutButton = document.getElementById('logout');
             logoutButton.addEventListener('click', () => {
-                // Clear API key from both localStorage and API instance
-                this.api.clearApiKey();
+                // Clear chat history from UI
+                this.clearMessages(false); // Don't remove from storage
                 
-                // Clear chat history
-                this.clearMessages();
+                // Clear API key
+                this.api.clearApiKey();
                 
                 // Show API key form and hide chat interface
                 document.querySelector('.api-key-container').style.display = 'flex';
@@ -217,10 +251,14 @@ class OpenWebUI {
         messageElement.classList.add('message', role);
         messageElement.textContent = content;
         
-        // Добавляем в начало контейнера (для отображения снизу вверх)
+        // Add to UI
         messagesContainer.insertBefore(messageElement, messagesContainer.firstChild);
         
-        // Скролл к новому сообщению (теперь вверх)
+        // Add to messages array and save
+        this.messages.push({ content, role });
+        this.saveMessages();
+        
+        // Scroll to new message
         this.scrollToTop(true);
     }
 
@@ -247,10 +285,17 @@ class OpenWebUI {
         this.showAlert('Chat has been reset', 'success');
     }
 
-    clearMessages() {
+    clearMessages(removeFromStorage = true) {
         const messagesContainer = document.querySelector('.messages-container');
         messagesContainer.innerHTML = '';
         this.messages = [];
+        
+        if (removeFromStorage) {
+            const storageKey = this.getMessagesStorageKey();
+            if (storageKey) {
+                localStorage.removeItem(storageKey);
+            }
+        }
     }
 
     initScrollHandlers() {

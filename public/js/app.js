@@ -24,8 +24,8 @@ class OpenWebUI {
             messagesContainer.innerHTML = '';
             this.messages.forEach(msg => {
                 const messageElement = document.createElement('div');
-                messageElement.classList.add('message', msg.role);
-                messageElement.textContent = msg.content;
+                messageElement.classList.add('message', msg.isUser ? 'user-message' : 'assistant-message');
+                messageElement.textContent = msg.text;
                 messagesContainer.insertBefore(messageElement, messagesContainer.firstChild);
             });
         }
@@ -39,28 +39,77 @@ class OpenWebUI {
     }
 
     initKeyboardHandlers() {
-        // Обработка появления клавиатуры
+        if (!window.visualViewport) {
+            console.log('Visual Viewport API not supported');
+            return;
+        }
+
+        const chatInterface = document.querySelector('.chat-interface');
+        const header = document.querySelector('.chat-header');
+        const messagesContainer = document.querySelector('.messages-container');
+        const inputContainer = document.querySelector('.input-container');
+        
+        let keyboardHeight = 0;
+        let lastHeight = window.visualViewport.height;
+
+        // Обработка изменения размера viewport (появление/исчезновение клавиатуры)
         window.visualViewport.addEventListener('resize', () => {
-            const inputContainer = document.querySelector('.input-container');
-            if (inputContainer) {
-                inputContainer.style.transform = `translateY(0px)`;
+            const newKeyboardHeight = Math.max(0, window.innerHeight - window.visualViewport.height);
+            
+            // Если высота изменилась значительно (появилась/исчезла клавиатура)
+            if (Math.abs(newKeyboardHeight - keyboardHeight) > 150) {
+                keyboardHeight = newKeyboardHeight;
+                
+                // Обновляем высоту интерфейса
+                chatInterface.style.height = `${window.visualViewport.height}px`;
+                
+                // Обновляем отступ для контейнера сообщений
+                const inputHeight = inputContainer.offsetHeight;
+                messagesContainer.style.paddingBottom = `${inputHeight + 16}px`;
+                
+                // Прокручиваем к активному элементу
+                if (keyboardHeight > 0) {
+                    requestAnimationFrame(() => {
+                        const activeElement = document.activeElement;
+                        if (activeElement && activeElement.tagName === 'TEXTAREA') {
+                            activeElement.scrollIntoView({ block: 'end' });
+                        }
+                    });
+                }
             }
+            
+            lastHeight = window.visualViewport.height;
         });
 
-        // Обработка скрытия клавиатуры
-        window.visualViewport.addEventListener('scroll', () => {
-            const inputContainer = document.querySelector('.input-container');
-            if (inputContainer) {
-                inputContainer.style.transform = `translateY(0px)`;
+        // Обработка фокуса на поле ввода
+        this.messageInput.addEventListener('focus', () => {
+            setTimeout(() => {
+                this.messageInput.scrollIntoView({ block: 'end' });
+            }, 100);
+        });
+
+        // Предотвращаем скролл body при открытой клавиатуре
+        document.body.addEventListener('touchmove', (e) => {
+            if (document.activeElement.tagName === 'TEXTAREA') {
+                e.preventDefault();
             }
+        }, { passive: false });
+
+        // Автоматическая высота текстового поля
+        this.messageInput.addEventListener('input', () => {
+            this.messageInput.style.height = 'auto';
+            this.messageInput.style.height = `${Math.min(this.messageInput.scrollHeight, 120)}px`;
         });
     }
 
     scrollToBottom(smooth = true) {
         requestAnimationFrame(() => {
-        const container = document.querySelector('.messages-container');
+            const container = document.querySelector('.messages-container');
+            const scrollHeight = container.scrollHeight;
+            const clientHeight = container.clientHeight;
+            
             container.scrollTo({
-                top: container.scrollHeight,
+                top: Math.max(0, scrollHeight - clientHeight),
                 behavior: smooth ? 'smooth' : 'auto'
             });
         });
@@ -218,20 +267,23 @@ class OpenWebUI {
     }
 
     async sendMessage() {
-        const message = this.messageInput.value.trim();
-        if (!message) return;
+        const messageText = this.messageInput.value.trim();
+        if (!messageText) return;
+
+        // Очищаем поле ввода
+        this.messageInput.value = '';
+        this.messageInput.style.height = 'auto';
 
         try {
             // Добавляем сообщение пользователя
-            this.addMessage(message, 'user');
-            this.messageInput.value = '';
+            this.addMessage(messageText, true);
 
-            // Отправляем запрос
-            const response = await this.api.sendMessage(message);
-            
+            // Отправляем запрос к API
+            const response = await this.api.sendMessage(messageText);
+
             // Добавляем ответ от API
             if (response && response.choices && response.choices[0]) {
-                this.addMessage(response.choices[0].message.content, 'assistant');
+                this.addMessage(response.choices[0].message.content, false);
             }
 
         } catch (error) {
@@ -240,21 +292,20 @@ class OpenWebUI {
         }
     }
 
-    addMessage(content, role) {
+    addMessage(text, isUser) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
+        messageDiv.textContent = text;
+        
         const messagesContainer = document.querySelector('.messages-container');
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message', role);
-        messageElement.textContent = content;
+        messagesContainer.insertAdjacentElement('afterbegin', messageDiv);
         
-        // Add to UI
-        messagesContainer.insertBefore(messageElement, messagesContainer.firstChild);
+        // Прокручиваем к последнему сообщению
+        this.scrollToBottom();
         
-        // Add to messages array and save
-        this.messages.push({ content, role });
+        // Сохраняем сообщение
+        this.messages.unshift({ text, isUser });
         this.saveMessages();
-        
-        // Scroll to new message
-        this.scrollToTop(true);
     }
 
     showError(message) {

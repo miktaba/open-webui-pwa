@@ -178,34 +178,40 @@ class OpenWebUI {
         }
     }
 
-    /**
-     * Shows the API key form.
-     */
     showApiKeyForm() {
         const apiKeyContainer = document.querySelector('.api-key-container');
         const apiKeyInput = document.getElementById('api-key-input');
         const saveButton = document.getElementById('save-api-key');
         const clearButton = document.getElementById('clear-api-key');
         
+        // Remove old event listeners if they exist
+        const newClearButton = clearButton.cloneNode(true);
+        const newSaveButton = saveButton.cloneNode(true);
+        const newApiKeyInput = apiKeyInput.cloneNode(true);
+        
+        clearButton.parentNode.replaceChild(newClearButton, clearButton);
+        saveButton.parentNode.replaceChild(newSaveButton, saveButton);
+        apiKeyInput.parentNode.replaceChild(newApiKeyInput, apiKeyInput);
+        
         apiKeyContainer.style.display = 'flex';
         
         // Clear input field
-        clearButton.addEventListener('click', () => {
-            apiKeyInput.value = '';
-            apiKeyInput.focus();
+        newClearButton.addEventListener('click', () => {
+            newApiKeyInput.value = '';
+            newApiKeyInput.focus();
         });
 
         // Show/hide clear button based on input content
-        apiKeyInput.addEventListener('input', () => {
-            clearButton.style.display = apiKeyInput.value ? 'flex' : 'none';
+        newApiKeyInput.addEventListener('input', () => {
+            newClearButton.style.display = newApiKeyInput.value ? 'flex' : 'none';
         });
 
         // Initialize clear button visibility
-        clearButton.style.display = 'none';
+        newClearButton.style.display = 'none';
 
         // Handle API key save
-        saveButton.addEventListener('click', async () => {
-            const apiKey = apiKeyInput.value.trim();
+        newSaveButton.addEventListener('click', async () => {
+            const apiKey = newApiKeyInput.value.trim();
             if (!apiKey) {
                 this.showError('Please enter API key');
                 return;
@@ -218,6 +224,14 @@ class OpenWebUI {
             } catch (error) {
                 console.error('Set API key error:', error);
                 this.showError('Failed to set API key');
+            }
+        });
+
+        // Add Enter key handler
+        newApiKeyInput.addEventListener('keypress', async (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                newSaveButton.click();
             }
         });
     }

@@ -159,6 +159,9 @@ class OpenWebUI {
                 document.querySelector('.api-key-container').style.display = 'flex';
                 document.querySelector('.chat-interface').style.display = 'none';
                 
+                // Clear API key input
+                document.getElementById('api-key-input').value = '';
+                
                 // Show success message
                 this.showAlert('Logged out successfully', 'success');
             });

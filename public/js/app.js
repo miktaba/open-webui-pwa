@@ -178,40 +178,54 @@ class OpenWebUI {
         }
     }
 
+    async logout() {
+        // Clear chat history from UI
+        this.clearMessages(false);
+        
+        // Clear API key
+        this.api.clearApiKey();
+        
+        // Show API key form and hide chat interface
+        this.chatInterface.style.display = 'none';
+        
+        // Clear API key input and show form
+        document.getElementById('api-key-input').value = '';
+        this.apiKeyContainer.style.display = 'flex';
+        
+        // Remove old event listeners
+        const oldForm = document.querySelector('.api-key-form');
+        const newForm = oldForm.cloneNode(true);
+        oldForm.parentNode.replaceChild(newForm, oldForm);
+        
+        // Reinitialize form
+        this.showApiKeyForm();
+    }
+
     showApiKeyForm() {
         const apiKeyContainer = document.querySelector('.api-key-container');
         const apiKeyInput = document.getElementById('api-key-input');
         const saveButton = document.getElementById('save-api-key');
         const clearButton = document.getElementById('clear-api-key');
         
-        // Remove old event listeners if they exist
-        const newClearButton = clearButton.cloneNode(true);
-        const newSaveButton = saveButton.cloneNode(true);
-        const newApiKeyInput = apiKeyInput.cloneNode(true);
-        
-        clearButton.parentNode.replaceChild(newClearButton, clearButton);
-        saveButton.parentNode.replaceChild(newSaveButton, saveButton);
-        apiKeyInput.parentNode.replaceChild(newApiKeyInput, apiKeyInput);
-        
         apiKeyContainer.style.display = 'flex';
         
         // Clear input field
-        newClearButton.addEventListener('click', () => {
-            newApiKeyInput.value = '';
-            newApiKeyInput.focus();
+        clearButton.addEventListener('click', () => {
+            apiKeyInput.value = '';
+            apiKeyInput.focus();
         });
 
         // Show/hide clear button based on input content
-        newApiKeyInput.addEventListener('input', () => {
-            newClearButton.style.display = newApiKeyInput.value ? 'flex' : 'none';
+        apiKeyInput.addEventListener('input', () => {
+            clearButton.style.display = apiKeyInput.value ? 'flex' : 'none';
         });
 
         // Initialize clear button visibility
-        newClearButton.style.display = 'none';
+        clearButton.style.display = 'none';
 
         // Handle API key save
-        newSaveButton.addEventListener('click', async () => {
-            const apiKey = newApiKeyInput.value.trim();
+        saveButton.addEventListener('click', async () => {
+            const apiKey = apiKeyInput.value.trim();
             if (!apiKey) {
                 this.showError('Please enter API key');
                 return;
@@ -228,10 +242,10 @@ class OpenWebUI {
         });
 
         // Add Enter key handler
-        newApiKeyInput.addEventListener('keypress', async (e) => {
+        apiKeyInput.addEventListener('keypress', async (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                newSaveButton.click();
+                saveButton.click();
             }
         });
     }
@@ -254,20 +268,7 @@ class OpenWebUI {
 
             // Initialize logout functionality
             const logoutButton = document.getElementById('logout');
-            logoutButton.addEventListener('click', () => {
-                // Clear chat history from UI
-                this.clearMessages(false); // Don't remove from storage
-                
-                // Clear API key
-                this.api.clearApiKey();
-                
-                // Show API key form and hide chat interface
-                document.querySelector('.api-key-container').style.display = 'flex';
-                document.querySelector('.chat-interface').style.display = 'none';
-                
-                // Clear API key input
-                document.getElementById('api-key-input').value = '';
-            });
+            logoutButton.addEventListener('click', () => this.logout());
 
             // Get available models and wait for result
             const response = await this.api.getModels();
@@ -406,28 +407,23 @@ class OpenWebUI {
         }, 3000);
     }
 
-    /**
-     * Resets the chat.
-     */
     resetChat() {
-        this.clearMessages();
-        this.showAlert('Chat has been reset', 'success');
+        if (confirm('Are you sure you want to clear the chat history?')) {
+            this.clearMessages(true);
+        }
     }
 
-    /**
-     * Clears messages from UI and local storage.
-     * @param {boolean} removeFromStorage Whether to remove from storage or not.
-     */
     clearMessages(removeFromStorage = true) {
-        const messagesContainer = document.querySelector('.messages-container');
-        messagesContainer.innerHTML = '';
+        // Clear messages array
         this.messages = [];
         
+        // Clear messages from UI
+        const messagesContainer = document.querySelector('.messages-container');
+        messagesContainer.innerHTML = '';
+        
+        // Clear from storage if needed
         if (removeFromStorage) {
-            const storageKey = this.getMessagesStorageKey();
-            if (storageKey) {
-                localStorage.removeItem(storageKey);
-            }
+            this.saveMessages();
         }
     }
 

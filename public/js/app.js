@@ -73,6 +73,9 @@ class OpenWebUI {
         const input = document.getElementById('api-key-input');
         const button = document.getElementById('save-api-key');
 
+        // Clear input field
+        input.value = '';
+
         button.addEventListener('click', async () => {
             const apiKey = input.value.trim();
             if (!apiKey) {

@@ -145,36 +145,44 @@ class OpenWebUI {
     }
 
     showApiKeyForm() {
-        const input = document.getElementById('api-key-input');
-        const button = document.getElementById('save-api-key');
+        const apiKeyContainer = document.querySelector('.api-key-container');
+        const apiKeyInput = document.getElementById('api-key-input');
+        const saveButton = document.getElementById('save-api-key');
+        const clearButton = document.getElementById('clear-api-key');
+        
+        apiKeyContainer.style.display = 'flex';
+        
+        // Очистка поля ввода
+        clearButton.addEventListener('click', () => {
+            apiKeyInput.value = '';
+            apiKeyInput.focus();
+        });
 
-        // Clear input field
-        input.value = '';
+        // Показываем/скрываем кнопку очистки в зависимости от наличия текста
+        apiKeyInput.addEventListener('input', () => {
+            clearButton.style.display = apiKeyInput.value ? 'flex' : 'none';
+        });
 
-        button.addEventListener('click', async () => {
-            const apiKey = input.value.trim();
+        // Инициализация видимости кнопки очистки
+        clearButton.style.display = 'none';
+
+        // Обработка сохранения API ключа
+        saveButton.addEventListener('click', async () => {
+            const apiKey = apiKeyInput.value.trim();
             if (!apiKey) {
                 this.showError('Please enter API key');
                 return;
             }
 
             try {
-                const isValid = await this.api.checkApiKey(apiKey);
-                
-                if (isValid) {
-                    this.api.setApiKey(apiKey);
-                    await this.initializeChat();
-                } else {
-                    this.showError('Invalid API key');
-                }
+                await this.api.setApiKey(apiKey);
+                apiKeyContainer.style.display = 'none';
+                this.initializeChat();
             } catch (error) {
-                console.error('Error checking API key:', error);
-                this.showError('Error checking API key');
+                console.error('Set API key error:', error);
+                this.showError('Failed to set API key');
             }
         });
-
-        this.apiKeyContainer.style.display = 'flex';
-        this.chatInterface.style.display = 'none';
     }
 
     async initializeChat() {

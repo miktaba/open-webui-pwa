@@ -1,23 +1,28 @@
-// Service Worker для PWA
+// Service Worker for PWA
+const CACHE_NAME = 'openwebui-cache-v1';
+const ASSETS_TO_CACHE = [
+    '/',
+    '/index.html',
+    '/css/styles.css',
+    '/js/app.js',
+    '/js/db.js',
+    '/js/env.js',
+    '/js/config.js',
+    '/manifest.json',
+    '/images/icon-192x192.png',
+    '/images/icon-512x512.png'
+];
+
+// Install event - cache assets
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        caches.open('openwebui-cache-v1').then((cache) => {
-            return cache.addAll([
-                '/',
-                '/index.html',
-                '/css/styles.css',
-                '/js/app.js',
-                '/js/db.js',
-                '/js/env.js',
-                '/js/config.js',
-                '/manifest.json',
-                '/images/icon-192x192.png',
-                '/images/icon-512x512.png'
-            ]);
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.addAll(ASSETS_TO_CACHE);
         })
     );
 });
 
+// Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
     event.respondWith(
         fetch(event.request).catch(() => {
@@ -26,38 +31,15 @@ self.addEventListener('fetch', (event) => {
     );
 });
 
+// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((cacheNames) => {
             return Promise.all(
                 cacheNames
-                    .filter((cacheName) => {
-                        return cacheName.startsWith('openwebui-cache-') && 
-                               cacheName !== 'openwebui-cache-v1';
-                    })
-                    .map((cacheName) => {
-                        return caches.delete(cacheName);
-                    })
+                    .filter((name) => name !== CACHE_NAME)
+                    .map((name) => caches.delete(name))
             );
         })
     );
 });
-
-// Добавить стратегии кэширования
-const CACHE_STRATEGIES = {
-    NETWORK_FIRST: 'network-first',
-    CACHE_FIRST: 'cache-first',
-    STALE_WHILE_REVALIDATE: 'stale-while-revalidate'
-}; 
-
-// Улучшенное кэширование
-workbox.routing.registerRoute(
-    /\.(?:js|css|png)$/,
-    new workbox.strategies.StaleWhileRevalidate()
-);
-
-// Offline fallback
-workbox.routing.registerRoute(
-    new RegExp('/api/.*'),
-    new workbox.strategies.NetworkFirst()
-); 

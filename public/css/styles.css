@@ -159,35 +159,37 @@ body {
 
 /* Input Container */
 .input-container {
-    position: relative;
-    z-index: 1;
     background: white;
     border-top: 1px solid #eee;
     padding: 8px;
-    padding-bottom: max(8px, env(safe-area-inset-bottom));
-    display: flex;
-    flex-direction: column;
+    margin-top: auto;
 }
 
 .input-wrapper {
     display: flex;
     align-items: flex-end;
-    gap: 12px;
-    width: 100%;
-    margin-bottom: 12px;
-}
-
-#message-input {
-    flex: 1;
-    height: 40px;
-    min-height: 40px;
-    max-height: 40px;
-    padding: 8px 12px;
+    gap: 8px;
+    background: white;
     border: 1px solid #ddd;
     border-radius: 20px;
+    padding: 4px;
+    margin: 8px;
+}
+
+.input-wrapper textarea {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: none;
+    font-size: 14px;
+    line-height: 1.5;
+    max-height: 200px;
+    min-height: 24px;
+    padding: 12px;
     resize: none;
-    font-size: 16px;
-    line-height: 1.4;
+    overflow-y: hidden;
+    width: 100%;
+    font-family: inherit;
 }
 
 #send-message {
@@ -222,7 +224,21 @@ body {
 
 /* iOS PWA Fix */
 @supports (-webkit-touch-callout: none) {
+    html {
+        height: 100vh;
+        height: -webkit-fill-available;
+    }
+    
+    body {
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+        position: fixed;
+        width: 100%;
+        overflow: hidden;
+    }
+
     .chat-interface {
+        height: 100vh;
         height: -webkit-fill-available;
     }
     
@@ -233,6 +249,10 @@ body {
     
     .chat-header {
         padding-top: calc(16px + env(safe-area-inset-top));
+    }
+
+    .input-container {
+        padding-bottom: env(safe-area-inset-bottom);
     }
 }
 

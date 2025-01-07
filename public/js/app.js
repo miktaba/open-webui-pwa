@@ -1,17 +1,28 @@
 class OpenWebUI {
+    /**
+     * Constructor for the OpenWebUI class.
+     * Initializes the API client, messages array, and sets up event listeners.
+     */
     constructor() {
-            this.api = new OpenWebUIApi();
+        this.api = new OpenWebUIApi();
         this.messages = [];
         this.initializeApp();
         this.initKeyboardHandlers();
         this.initScrollHandlers();
     }
 
+    /**
+     * Returns the storage key for messages based on the API key.
+     * @returns {string|null} The storage key or null if no API key is set.
+     */
     getMessagesStorageKey() {
         const apiKey = this.api.getApiKey();
         return apiKey ? `${CONFIG.STORAGE.MESSAGES}_${apiKey}` : null;
     }
 
+    /**
+     * Loads messages from local storage and updates the UI.
+     */
     loadMessages() {
         const storageKey = this.getMessagesStorageKey();
         if (!storageKey) return;
@@ -31,6 +42,9 @@ class OpenWebUI {
         }
     }
 
+    /**
+     * Saves messages to local storage.
+     */
     saveMessages() {
         const storageKey = this.getMessagesStorageKey();
         if (!storageKey) return;
@@ -38,6 +52,9 @@ class OpenWebUI {
         localStorage.setItem(storageKey, JSON.stringify(this.messages));
     }
 
+    /**
+     * Initializes keyboard event handlers.
+     */
     initKeyboardHandlers() {
         if (!window.visualViewport) {
             console.log('Visual Viewport API not supported');
@@ -52,22 +69,22 @@ class OpenWebUI {
         let keyboardHeight = 0;
         let lastHeight = window.visualViewport.height;
 
-        // Обработка изменения размера viewport (появление/исчезновение клавиатуры)
+        // Handle viewport resize event (keyboard appearance/disappearance)
         window.visualViewport.addEventListener('resize', () => {
             const newKeyboardHeight = Math.max(0, window.innerHeight - window.visualViewport.height);
             
-            // Если высота изменилась значительно (появилась/исчезла клавиатура)
+            // If height changes significantly (keyboard appears/disappears)
             if (Math.abs(newKeyboardHeight - keyboardHeight) > 150) {
                 keyboardHeight = newKeyboardHeight;
                 
-                // Обновляем высоту интерфейса
+                // Update interface height
                 chatInterface.style.height = `${window.visualViewport.height}px`;
                 
-                // Обновляем отступ для контейнера сообщений
+                // Update padding for messages container
                 const inputHeight = inputContainer.offsetHeight;
                 messagesContainer.style.paddingBottom = `${inputHeight + 16}px`;
                 
-                // Прокручиваем к активному элементу
+                // Scroll to active element
                 if (keyboardHeight > 0) {
                     requestAnimationFrame(() => {
                         const activeElement = document.activeElement;
@@ -81,27 +98,31 @@ class OpenWebUI {
             lastHeight = window.visualViewport.height;
         });
 
-        // Обработка фокуса на поле ввода
+        // Handle focus on input field
         this.messageInput.addEventListener('focus', () => {
             setTimeout(() => {
                 this.messageInput.scrollIntoView({ block: 'end' });
             }, 100);
         });
 
-        // Предотвращаем скролл body при открытой клавиатуре
+        // Prevent body scroll when keyboard is open
         document.body.addEventListener('touchmove', (e) => {
             if (document.activeElement.tagName === 'TEXTAREA') {
                 e.preventDefault();
             }
         }, { passive: false });
 
-        // Автоматическая высота текстового поля
+        // Auto-height for textarea
         this.messageInput.addEventListener('input', () => {
             this.messageInput.style.height = 'auto';
             this.messageInput.style.height = `${Math.min(this.messageInput.scrollHeight, 120)}px`;
         });
     }
 
+    /**
+     * Scrolls to the bottom of the messages container.
+     * @param {boolean} smooth Whether to scroll smoothly or not.
+     */
     scrollToBottom(smooth = true) {
         requestAnimationFrame(() => {
             const container = document.querySelector('.messages-container');
@@ -115,6 +136,10 @@ class OpenWebUI {
         });
     }
 
+    /**
+     * Scrolls to the top of the messages container.
+     * @param {boolean} smooth Whether to scroll smoothly or not.
+     */
     scrollToTop(smooth = true) {
         requestAnimationFrame(() => {
             const container = document.querySelector('.messages-container');
@@ -125,8 +150,11 @@ class OpenWebUI {
         });
     }
 
+    /**
+     * Initializes the application.
+     */
     async initializeApp() {
-        // Получаем элементы интерфейса
+        // Get interface elements
         this.apiKeyContainer = document.querySelector('.api-key-container');
         this.apiKeyForm = document.querySelector('.api-key-form');
         this.chatInterface = document.querySelector('.chat-interface');
@@ -134,7 +162,13 @@ class OpenWebUI {
         this.sendButton = document.getElementById('send-message');
         this.modelSelect = document.getElementById('model-select');
         
-        // Проверяем наличие API ключа
+        // Initialize adaptive height for textarea
+        this.messageInput.addEventListener('input', () => {
+            this.messageInput.style.height = 'auto';
+            this.messageInput.style.height = (this.messageInput.scrollHeight) + 'px';
+        });
+        
+        // Check for API key
         const apiKey = localStorage.getItem(CONFIG.STORAGE.API_KEY);
         if (!apiKey) {
             this.showApiKeyForm();
@@ -144,6 +178,9 @@ class OpenWebUI {
         }
     }
 
+    /**
+     * Shows the API key form.
+     */
     showApiKeyForm() {
         const apiKeyContainer = document.querySelector('.api-key-container');
         const apiKeyInput = document.getElementById('api-key-input');
@@ -152,21 +189,21 @@ class OpenWebUI {
         
         apiKeyContainer.style.display = 'flex';
         
-        // Очистка поля ввода
+        // Clear input field
         clearButton.addEventListener('click', () => {
             apiKeyInput.value = '';
             apiKeyInput.focus();
         });
 
-        // Показываем/скрываем кнопку очистки в зависимости от наличия текста
+        // Show/hide clear button based on input content
         apiKeyInput.addEventListener('input', () => {
             clearButton.style.display = apiKeyInput.value ? 'flex' : 'none';
         });
 
-        // Инициализация видимости кнопки очистки
+        // Initialize clear button visibility
         clearButton.style.display = 'none';
 
-        // Обработка сохранения API ключа
+        // Handle API key save
         saveButton.addEventListener('click', async () => {
             const apiKey = apiKeyInput.value.trim();
             if (!apiKey) {
@@ -185,20 +222,23 @@ class OpenWebUI {
         });
     }
 
+    /**
+     * Initializes the chat interface.
+     */
     async initializeChat() {
         try {
-            // Скрываем форму API ключа и показываем чат
+            // Hide API key form and show chat
             this.apiKeyContainer.style.display = 'none';
             this.chatInterface.style.display = 'block';
-
+            
             // Load messages for this API key
             this.loadMessages();
 
-            // Инициализируем кнопку сброса
+            // Initialize reset button
             const resetButton = document.getElementById('reset-chat');
             resetButton.addEventListener('click', () => this.resetChat());
 
-            // Logout functionality
+            // Initialize logout functionality
             const logoutButton = document.getElementById('logout');
             logoutButton.addEventListener('click', () => {
                 // Clear chat history from UI
@@ -215,11 +255,11 @@ class OpenWebUI {
                 document.getElementById('api-key-input').value = '';
             });
 
-            // Получаем список моделей и ждем результат
+            // Get available models and wait for result
             const response = await this.api.getModels();
             console.log('API Response:', response);
 
-            // Проверяем формат ответа
+            // Check response format
             const models = response.data || response.models || response;
             console.log('Models data:', models);
 
@@ -227,7 +267,7 @@ class OpenWebUI {
                 throw new Error('No models available');
             }
 
-            // Заполняем select моделями
+            // Populate model select
             this.modelSelect.innerHTML = '';
             models.forEach(model => {
                 const option = document.createElement('option');
@@ -236,18 +276,18 @@ class OpenWebUI {
                 this.modelSelect.appendChild(option);
             });
 
-            // Выбираем первую модель
+            // Select first model
             this.api.model = models[0].id || models[0].name || models[0];
             this.modelSelect.value = this.api.model;
             console.log('Selected model:', this.api.model);
 
-            // Добавляем обработчик изменения модели
+            // Add model change event listener
             this.modelSelect.addEventListener('change', () => {
                 this.api.model = this.modelSelect.value;
                 console.log('Model changed to:', this.api.model);
             });
 
-            // Настраиваем обработчики событий
+            // Initialize send button and message input event listeners
             this.sendButton.addEventListener('click', () => this.sendMessage());
             this.messageInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -256,7 +296,7 @@ class OpenWebUI {
                 }
             });
 
-            // Автоскролл при новых сообщениях
+            // Auto-scroll to bottom on new messages
             const messagesContainer = document.querySelector('.messages-container');
             const observer = new MutationObserver(() => {
                 this.scrollToBottom();
@@ -267,29 +307,32 @@ class OpenWebUI {
             console.error('Chat initialization error:', error);
             this.showError('Failed to initialize chat: ' + error.message);
             
-            // Возвращаемся к форме API ключа при ошибке
+            // Return to API key form on error
             this.apiKeyContainer.style.display = 'flex';
             this.chatInterface.style.display = 'none';
             localStorage.removeItem('openwebui_api_key');
         }
     }
 
+    /**
+     * Sends a message to the API.
+     */
     async sendMessage() {
         const messageText = this.messageInput.value.trim();
         if (!messageText) return;
 
-        // Очищаем поле ввода
+        // Clear input field
         this.messageInput.value = '';
         this.messageInput.style.height = 'auto';
 
         try {
-            // Добавляем сообщение пользователя
+            // Add user message to UI
             this.addMessage(messageText, true);
 
-            // Отправляем запрос к API
+            // Send message to API
             const response = await this.api.sendMessage(messageText);
 
-            // Добавляем ответ от API
+            // Add response to UI
             if (response && response.choices && response.choices[0]) {
                 this.addMessage(response.choices[0].message.content, false);
             }
@@ -300,26 +343,41 @@ class OpenWebUI {
         }
     }
 
+    /**
+     * Adds a message to the UI and local storage.
+     * @param {string} text The message text.
+     * @param {boolean} isUser Whether the message is from the user or not.
+     */
     addMessage(text, isUser) {
+        // Add to messages array
+        this.messages.push({ text, isUser });
+        this.saveMessages();
+
+        // Add to UI
         const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${isUser ? 'user-message' : 'assistant-message'}`;
+        messageDiv.classList.add('message', isUser ? 'user-message' : 'assistant-message');
         messageDiv.textContent = text;
         
         const messagesContainer = document.querySelector('.messages-container');
-        messagesContainer.insertAdjacentElement('afterbegin', messageDiv);
+        messagesContainer.insertBefore(messageDiv, messagesContainer.firstChild);
         
-        // Прокручиваем к последнему сообщению
+        // Scroll to bottom
         this.scrollToBottom();
-        
-        // Сохраняем сообщение
-        this.messages.unshift({ text, isUser });
-        this.saveMessages();
     }
 
+    /**
+     * Shows an error message.
+     * @param {string} message The error message.
+     */
     showError(message) {
-        alert(message); // Можно заменить на более красивое уведомление
+        alert(message); // Can be replaced with a more beautiful notification
     }
 
+    /**
+     * Shows an alert message.
+     * @param {string} message The alert message.
+     * @param {string} type The alert type (default, success, error).
+     */
     showAlert(message, type = 'default') {
         const alertContainer = document.getElementById('alert-container');
         const alert = document.createElement('div');
@@ -327,18 +385,25 @@ class OpenWebUI {
         alert.textContent = message;
         alertContainer.appendChild(alert);
 
-        // Удаляем уведомление через 3 секунды
+        // Remove alert after 3 seconds
         setTimeout(() => {
             alert.style.opacity = '0';
             setTimeout(() => alertContainer.removeChild(alert), 300);
         }, 3000);
     }
 
+    /**
+     * Resets the chat.
+     */
     resetChat() {
         this.clearMessages();
         this.showAlert('Chat has been reset', 'success');
     }
 
+    /**
+     * Clears messages from UI and local storage.
+     * @param {boolean} removeFromStorage Whether to remove from storage or not.
+     */
     clearMessages(removeFromStorage = true) {
         const messagesContainer = document.querySelector('.messages-container');
         messagesContainer.innerHTML = '';
@@ -352,11 +417,14 @@ class OpenWebUI {
         }
     }
 
+    /**
+     * Initializes scroll event handlers.
+     */
     initScrollHandlers() {
-        console.log('Initializing scroll handlers...'); // Лог 1
+        console.log('Initializing scroll handlers...'); // Log 1
 
         if (!this.messageInput || !document.querySelector('.messages-container')) {
-            console.log('Elements not ready, retrying...'); // Лог 2
+            console.log('Elements not ready, retrying...'); // Log 2
             setTimeout(() => this.initScrollHandlers(), 100);
             return;
         }
@@ -364,20 +432,20 @@ class OpenWebUI {
         const container = document.querySelector('.messages-container');
         const scrollButton = document.getElementById('scroll-bottom');
 
-        console.log('Elements found:', { // Лог 3
+        console.log('Elements found:', { // Log 3
             container: !!container,
             scrollButton: !!scrollButton,
             messageInput: !!this.messageInput
         });
 
-        // Показываем/скрываем кнопку при скролле
+        // Show/hide scroll button on scroll
         container.addEventListener('scroll', () => {
             const scrollHeight = container.scrollHeight;
             const scrollTop = container.scrollTop;
             const clientHeight = container.clientHeight;
             const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
             
-            console.log('Scroll info:', { // Лог 4
+            console.log('Scroll info:', { // Log 4
                 scrollHeight,
                 scrollTop,
                 clientHeight,
@@ -387,20 +455,20 @@ class OpenWebUI {
             scrollButton.classList.toggle('visible', !isNearBottom);
         });
 
-        // Плавный скролл по клику
+        // Handle scroll button click
         scrollButton.addEventListener('click', () => {
-            console.log('Scroll button clicked'); // Лог 5
+            console.log('Scroll button clicked'); // Log 5
             this.scrollToBottom(true);
         });
 
-        // Быстрый скролл при клавиатуре
+        // Scroll to bottom on keyboard focus
         this.messageInput.addEventListener('focus', () => {
             this.scrollToBottom(false);
         });
     }
 }
 
-// Инициализация приложения
+// Initialize the application
 window.addEventListener('load', () => {
-            new OpenWebUI();
-}); 
+    new OpenWebUI();
+});

@@ -41,23 +41,18 @@ class OpenWebUI {
     initKeyboardHandlers() {
         // Обработка появления клавиатуры
         window.visualViewport.addEventListener('resize', () => {
-            const viewport = window.visualViewport;
-            document.documentElement.style.height = `${viewport.height}px`;
-            
-            // Прокручиваем к нижней части при появлении клавиатуры
-            if (this.messageInput === document.activeElement) {
-                this.scrollToBottom();
+            const inputContainer = document.querySelector('.input-container');
+            if (inputContainer) {
+                inputContainer.style.transform = `translateY(0px)`;
             }
         });
 
-        // Обработка скролла при вводе
-        this.messageInput.addEventListener('input', () => {
-            this.scrollToBottom();
-            
-            // Автоматическая высота textarea
-            this.messageInput.style.height = 'auto';
-            this.messageInput.style.height = 
-                Math.min(this.messageInput.scrollHeight, CONFIG.UI.MAX_INPUT_HEIGHT) + 'px';
+        // Обработка скрытия клавиатуры
+        window.visualViewport.addEventListener('scroll', () => {
+            const inputContainer = document.querySelector('.input-container');
+            if (inputContainer) {
+                inputContainer.style.transform = `translateY(0px)`;
+            }
         });
     }
 

@@ -1,8 +1,10 @@
 class OpenWebUI {
     constructor() {
             this.api = new OpenWebUIApi();
+        this.messages = [];
         this.initializeApp();
         this.initKeyboardHandlers();
+        this.initScrollHandlers();
     }
 
     initKeyboardHandlers() {
@@ -50,6 +52,7 @@ class OpenWebUI {
 
     async initializeApp() {
         // Получаем элементы интерфейса
+        this.apiKeyContainer = document.querySelector('.api-key-container');
         this.apiKeyForm = document.querySelector('.api-key-form');
         this.chatInterface = document.querySelector('.chat-interface');
         this.messageInput = document.getElementById('message-input');
@@ -83,7 +86,7 @@ class OpenWebUI {
                 if (isValid) {
                     this.api.setApiKey(apiKey);
                     await this.initializeChat();
-        } else {
+                } else {
                     this.showError('Invalid API key');
                 }
             } catch (error) {
@@ -92,15 +95,19 @@ class OpenWebUI {
             }
         });
 
-        this.apiKeyForm.style.display = 'block';
+        this.apiKeyContainer.style.display = 'flex';
         this.chatInterface.style.display = 'none';
     }
 
     async initializeChat() {
         try {
             // Скрываем форму API ключа и показываем чат
-            this.apiKeyForm.style.display = 'none';
+            this.apiKeyContainer.style.display = 'none';
             this.chatInterface.style.display = 'block';
+
+            // Инициализируем кнопку сброса
+            const resetButton = document.getElementById('reset-chat');
+            resetButton.addEventListener('click', () => this.resetChat());
 
             // Получаем список моделей и ждем результат
             const response = await this.api.getModels();
@@ -155,7 +162,7 @@ class OpenWebUI {
             this.showError('Failed to initialize chat: ' + error.message);
             
             // Возвращаемся к форме API ключа при ошибке
-            this.apiKeyForm.style.display = 'block';
+            this.apiKeyContainer.style.display = 'flex';
             this.chatInterface.style.display = 'none';
             localStorage.removeItem('openwebui_api_key');
         }
@@ -199,6 +206,29 @@ class OpenWebUI {
 
     showError(message) {
         alert(message); // Можно заменить на более красивое уведомление
+    }
+
+    showAlert(message, type = 'default') {
+        const alertContainer = document.getElementById('alert-container');
+        const alert = document.createElement('div');
+        alert.className = `alert ${type}`;
+        alert.textContent = message;
+        alertContainer.appendChild(alert);
+
+        // Удаляем уведомление через 3 секунды
+        setTimeout(() => {
+            alert.style.opacity = '0';
+            setTimeout(() => alertContainer.removeChild(alert), 300);
+        }, 3000);
+    }
+
+    resetChat() {
+        if (confirm('Are you sure you want to reset the chat? This will clear all messages.')) {
+            const messagesContainer = document.querySelector('.messages-container');
+            messagesContainer.innerHTML = '';
+            this.messages = [];
+            this.showAlert('Chat has been reset', 'success');
+        }
     }
 
     initScrollHandlers() {

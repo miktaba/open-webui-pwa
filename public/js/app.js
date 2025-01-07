@@ -112,8 +112,8 @@ class OpenWebUI {
             // Logout functionality
             const logoutButton = document.getElementById('logout');
             logoutButton.addEventListener('click', () => {
-                // Clear API key
-                localStorage.removeItem('apiKey');
+                // Clear API key from both localStorage and API instance
+                this.api.clearApiKey();
                 
                 // Clear chat history
                 this.clearMessages();

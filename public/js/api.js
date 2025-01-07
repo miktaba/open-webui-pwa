@@ -10,6 +10,11 @@ class OpenWebUIApi {
         localStorage.setItem(CONFIG.STORAGE.API_KEY, key);
     }
 
+    clearApiKey() {
+        this.apiKey = null;
+        localStorage.removeItem(CONFIG.STORAGE.API_KEY);
+    }
+
     getApiKey() {
         if (!this.apiKey) {
             this.apiKey = localStorage.getItem(CONFIG.STORAGE.API_KEY);

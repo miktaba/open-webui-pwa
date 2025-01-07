@@ -1,26 +1,23 @@
-// Initialize configuration after environment variables are loaded
-window.initConfig = function() {
-    window.CONFIG = {
-        api: {
-            version: 'v1',
-            timeout: 30000,
-            chat: {
-                temperature: 0.7,
-                max_tokens: 2048
+const CONFIG = {
+    API: {
+        BASE_URL: window.__ENV__.OPENWEBUI_URL || 'http://localhost:3000',
+        ENDPOINTS: {
+            MODELS: '/api/models',
+            CHAT: '/api/chat/completions'
+        },
+        HEADERS: {
+            JSON: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
             }
-        },
-        endpoints: {
-            chat: '/api/chat/completions',
-            models: '/api/models'
-        },
-        app: {
-            name: 'Open WebUI',
-            version: '1.0.0',
-            isDev: false
         }
-    };
+    },
+    STORAGE: {
+        API_KEY: 'openwebui_api_key'
+    },
+    UI: {
+        SCROLL_THRESHOLD: 100,
+        MAX_INPUT_HEIGHT: 120,
+        DEFAULT_MODEL: 'llama3.2:latest'
+    }
 };
-
-if (window.__ENV__) {
-    window.initConfig();
-}

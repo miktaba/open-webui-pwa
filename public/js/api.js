@@ -1,13 +1,24 @@
 class OpenWebUIApi {
     constructor() {
-        this.baseUrl = window.__ENV__.OPENWEBUI_URL || 'http://localhost:3000';
-        this.model = null; // Добавим хранение текущей модели
+        this.baseUrl = CONFIG.API.BASE_URL;
+        this.model = CONFIG.UI.DEFAULT_MODEL;
+        this.apiKey = null;
     }
 
-    // Базовый метод для запросов
+    setApiKey(key) {
+        this.apiKey = key;
+        localStorage.setItem(CONFIG.STORAGE.API_KEY, key);
+    }
+
+    getApiKey() {
+        if (!this.apiKey) {
+            this.apiKey = localStorage.getItem(CONFIG.STORAGE.API_KEY);
+        }
+        return this.apiKey;
+    }
+
     async fetchApi(endpoint, options = {}) {
-        const apiKey = localStorage.getItem('openwebui_api_key');
-        console.log('Using API key:', apiKey);
+        const apiKey = this.getApiKey();
         
         if (!apiKey) {
             throw new Error('API key not found');
@@ -16,8 +27,7 @@ class OpenWebUIApi {
         const defaultOptions = {
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
+                ...CONFIG.API.HEADERS.JSON
             }
         };
 
@@ -28,9 +38,6 @@ class OpenWebUIApi {
             });
 
             if (!response.ok) {
-                console.error('API error:', response.status, response.statusText);
-                const text = await response.text();
-                console.error('Error response:', text);
                 throw new Error(`API error: ${response.status}`);
             }
 
@@ -41,78 +48,38 @@ class OpenWebUIApi {
         }
     }
 
-    // Получение списка моделей
     async getModels() {
-        try {
-            const response = await this.fetchApi('/api/models');
-            console.log('Available models:', response);
-            
-            // Сохраняем первую доступную модель как текущую
-            if (response && response.length > 0) {
-                this.model = response[0].id || response[0].name;
-                console.log('Using model:', this.model);
-            }
-            
-            return response;
-        } catch (error) {
-            console.error('Get models error:', error);
-            throw error;
-        }
+        return this.fetchApi(CONFIG.API.ENDPOINTS.MODELS);
     }
 
-    // Отправка сообщения
     async sendMessage(message) {
-        try {
-            // Если модель не выбрана, получаем список моделей
-            if (!this.model) {
-                await this.getModels();
-            }
-
-            console.log('Sending message:', message);
-            console.log('Using model:', this.model);
-            
-            const response = await this.fetchApi('/api/chat/completions', {
-                method: 'POST',
-                body: JSON.stringify({
-                    messages: [{
-                        role: 'user',
-                        content: message
-                    }],
-                    model: this.model, // Используем выбранную модель
-                    stream: false
-                })
-            });
-            
-            console.log('API Response:', response);
-            return response;
-        } catch (error) {
-            console.error('Send message error:', error);
-            throw error;
+        if (!this.model) {
+            throw new Error('Model not selected');
         }
+
+        return this.fetchApi(CONFIG.API.ENDPOINTS.CHAT, {
+            method: 'POST',
+            body: JSON.stringify({
+                messages: [{
+                    role: 'user',
+                    content: message
+                }],
+                model: this.model,
+                stream: false
+            })
+        });
     }
 
-    // Проверка API ключа
     async checkApiKey(apiKey) {
         try {
-            console.log('Checking API key:', apiKey);
-            console.log('Base URL:', this.baseUrl);
-            
-            const response = await fetch(`${this.baseUrl}/api/models`, {
+            const response = await fetch(`${this.baseUrl}${CONFIG.API.ENDPOINTS.MODELS}`, {
                 headers: {
                     'Authorization': `Bearer ${apiKey}`,
-                    'Accept': 'application/json'
+                    ...CONFIG.API.HEADERS.JSON
                 }
             });
-            
-            if (!response.ok) {
-                console.error('API check failed:', response.status, response.statusText);
-                const text = await response.text();
-                console.error('Response:', text);
-            }
-            
             return response.ok;
         } catch (error) {
-            console.error('API key check failed:', error);
             return false;
         }
     }

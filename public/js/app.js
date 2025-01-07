@@ -1,7 +1,51 @@
 class OpenWebUI {
     constructor() {
-        this.api = new OpenWebUIApi();
+            this.api = new OpenWebUIApi();
         this.initializeApp();
+        this.initKeyboardHandlers();
+    }
+
+    initKeyboardHandlers() {
+        // Обработка появления клавиатуры
+        window.visualViewport.addEventListener('resize', () => {
+            const viewport = window.visualViewport;
+            document.documentElement.style.height = `${viewport.height}px`;
+            
+            // Прокручиваем к нижней части при появлении клавиатуры
+            if (this.messageInput === document.activeElement) {
+                this.scrollToBottom();
+            }
+        });
+
+        // Обработка скролла при вводе
+        this.messageInput.addEventListener('input', () => {
+            this.scrollToBottom();
+            
+            // Автоматическая высота textarea
+            this.messageInput.style.height = 'auto';
+            this.messageInput.style.height = 
+                Math.min(this.messageInput.scrollHeight, CONFIG.UI.MAX_INPUT_HEIGHT) + 'px';
+        });
+    }
+
+    scrollToBottom(smooth = true) {
+        requestAnimationFrame(() => {
+        const container = document.querySelector('.messages-container');
+            container.scrollTo({
+                top: container.scrollHeight,
+                behavior: smooth ? 'smooth' : 'auto'
+            });
+        });
+    }
+
+    scrollToTop(smooth = true) {
+        requestAnimationFrame(() => {
+            const container = document.querySelector('.messages-container');
+            container.scrollTo({
+                top: 0,
+                behavior: smooth ? 'smooth' : 'auto'
+            });
+        });
     }
 
     async initializeApp() {
@@ -13,10 +57,11 @@ class OpenWebUI {
         this.modelSelect = document.getElementById('model-select');
         
         // Проверяем наличие API ключа
-        const apiKey = localStorage.getItem('openwebui_api_key');
+        const apiKey = localStorage.getItem(CONFIG.STORAGE.API_KEY);
         if (!apiKey) {
             this.showApiKeyForm();
         } else {
+            this.api.setApiKey(apiKey);
             await this.initializeChat();
         }
     }
@@ -33,14 +78,12 @@ class OpenWebUI {
             }
 
             try {
-                console.log('Trying API key:', apiKey);
                 const isValid = await this.api.checkApiKey(apiKey);
-                console.log('API key valid:', isValid);
                 
                 if (isValid) {
-                    localStorage.setItem('openwebui_api_key', apiKey);
+                    this.api.setApiKey(apiKey);
                     await this.initializeChat();
-                } else {
+        } else {
                     this.showError('Invalid API key');
                 }
             } catch (error) {
@@ -85,7 +128,7 @@ class OpenWebUI {
             this.modelSelect.value = this.api.model;
             console.log('Selected model:', this.api.model);
 
-            // Обработчик выбора модели
+            // Добавляем обработчик изменения модели
             this.modelSelect.addEventListener('change', () => {
                 this.api.model = this.modelSelect.value;
                 console.log('Model changed to:', this.api.model);
@@ -99,6 +142,13 @@ class OpenWebUI {
                     this.sendMessage();
                 }
             });
+
+            // Автоскролл при новых сообщениях
+            const messagesContainer = document.querySelector('.messages-container');
+            const observer = new MutationObserver(() => {
+                this.scrollToBottom();
+            });
+            observer.observe(messagesContainer, { childList: true });
 
         } catch (error) {
             console.error('Chat initialization error:', error);
@@ -139,16 +189,67 @@ class OpenWebUI {
         const messageElement = document.createElement('div');
         messageElement.classList.add('message', role);
         messageElement.textContent = content;
-        messagesContainer.appendChild(messageElement);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        
+        // Добавляем в начало контейнера (для отображения снизу вверх)
+        messagesContainer.insertBefore(messageElement, messagesContainer.firstChild);
+        
+        // Скролл к новому сообщению (теперь вверх)
+        this.scrollToTop(true);
     }
 
     showError(message) {
         alert(message); // Можно заменить на более красивое уведомление
     }
+
+    initScrollHandlers() {
+        console.log('Initializing scroll handlers...'); // Лог 1
+
+        if (!this.messageInput || !document.querySelector('.messages-container')) {
+            console.log('Elements not ready, retrying...'); // Лог 2
+            setTimeout(() => this.initScrollHandlers(), 100);
+            return;
+        }
+
+        const container = document.querySelector('.messages-container');
+        const scrollButton = document.getElementById('scroll-bottom');
+
+        console.log('Elements found:', { // Лог 3
+            container: !!container,
+            scrollButton: !!scrollButton,
+            messageInput: !!this.messageInput
+        });
+
+        // Показываем/скрываем кнопку при скролле
+        container.addEventListener('scroll', () => {
+            const scrollHeight = container.scrollHeight;
+            const scrollTop = container.scrollTop;
+            const clientHeight = container.clientHeight;
+            const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+            
+            console.log('Scroll info:', { // Лог 4
+                scrollHeight,
+                scrollTop,
+                clientHeight,
+                isNearBottom
+            });
+            
+            scrollButton.classList.toggle('visible', !isNearBottom);
+        });
+
+        // Плавный скролл по клику
+        scrollButton.addEventListener('click', () => {
+            console.log('Scroll button clicked'); // Лог 5
+            this.scrollToBottom(true);
+        });
+
+        // Быстрый скролл при клавиатуре
+        this.messageInput.addEventListener('focus', () => {
+            this.scrollToBottom(false);
+        });
+    }
 }
 
 // Инициализация приложения
 window.addEventListener('load', () => {
-    new OpenWebUI();
+            new OpenWebUI();
 }); 

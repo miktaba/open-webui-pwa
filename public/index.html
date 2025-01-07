@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>Open WebUI</title>
     <link rel="stylesheet" href="/css/styles.css">
 </head>
@@ -10,20 +13,31 @@
     <div id="app">
         <!-- API Key Form -->
         <div class="api-key-form">
-            <h2>Enter API Key</h2>
-            <input type="text" id="api-key-input" placeholder="Enter your API key">
-            <button id="save-api-key">Connect</button>
+            <div>
+                <h2>Enter API Key</h2>
+                <input type="text" id="api-key-input" placeholder="Enter your API key">
+                <button id="save-api-key">Connect</button>
+            </div>
         </div>
 
         <!-- Chat Interface -->
-        <div class="chat-interface" style="display: none;">
-            <div class="chat-header">
-                <select id="model-select" class="model-select"></select>
-            </div>
-            <div class="messages-container"></div>
-            <div class="input-container">
-                <textarea id="message-input"></textarea>
-                <button id="send-message">Send</button>
+        <div class="chat-interface">
+            <div class="chat-layout">
+                <!-- Fixed Header -->
+                <div class="chat-header">
+                    <select id="model-select" class="model-select"></select>
+                </div>
+                
+                <!-- Scrollable Messages -->
+                <div class="messages-container">
+                    <!-- Messages will be added here -->
+                </div>
+                
+                <!-- Fixed Footer -->
+                <div class="input-container">
+                    <textarea id="message-input" rows="1"></textarea>
+                    <button id="send-message">Send</button>
+                </div>
             </div>
         </div>
     </div>

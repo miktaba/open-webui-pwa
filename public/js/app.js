@@ -161,9 +161,6 @@ class OpenWebUI {
                 
                 // Clear API key input
                 document.getElementById('api-key-input').value = '';
-                
-                // Show success message
-                this.showAlert('Logged out successfully', 'success');
             });
 
             // Получаем список моделей и ждем результат
